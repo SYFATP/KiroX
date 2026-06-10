@@ -28,7 +28,7 @@ function _cmT(key, varsOrFallback, fallbackMaybe) {
 
 async function loadCloudMailConfigs() {
   try {
-    const configs = await window.go.main.App.GetCloudMailConfigs();
+    const configs = await AppAPI.GetCloudMailConfigs();
     cloudmailConfigs = configs || [];
     loadCloudMailConfigStatus();
     updateCloudMailUI();
@@ -197,7 +197,7 @@ async function inlineAddCloudMail() {
   var testPayload = { name: name, url: url, email: em, password: pwd, domains: [] };
   var testResult;
   try {
-    testResult = await window.go.main.App.TestCloudMailConnection(JSON.stringify(testPayload));
+    testResult = await AppAPI.TestCloudMailConnection(JSON.stringify(testPayload));
   } catch (e) {
     testResult = { error: String(e) };
   } finally {
@@ -214,7 +214,7 @@ async function inlineAddCloudMail() {
   var fetchedDomains = testResult.domains || [];
   const newConfig = { name: name, url: url, email: em, password: pwd, domains: fetchedDomains };
   cloudmailConfigs.push(newConfig);
-  const saveResult = await window.go.main.App.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
+  const saveResult = await AppAPI.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
   if (saveResult.error) {
     cloudmailConfigs.pop();
     showToast(_cmT('toast.operationFailed', '保存失败') + ': ' + saveResult.error, 'error');
@@ -255,7 +255,7 @@ async function inlineTestCloudMail() {
   btn.disabled = true; btn.textContent = _cmT('cloudmail.testing', '测试中...');
   if (statusEl) statusEl.textContent = '';
   try {
-    var result = await window.go.main.App.TestCloudMailConnection(JSON.stringify({
+    var result = await AppAPI.TestCloudMailConnection(JSON.stringify({
       name: 'inline-test', url: url, email: em, password: pwd, domains: []
     }));
     if (result.success) {
@@ -287,7 +287,7 @@ async function testCloudMailConfigByIndex(index) {
   if (index < 0 || index >= cloudmailConfigs.length) return;
   const config = cloudmailConfigs[index];
   try {
-    const result = await window.go.main.App.TestCloudMailConnection(JSON.stringify(config));
+    const result = await AppAPI.TestCloudMailConnection(JSON.stringify(config));
     if (result.error) {
       cloudmailConfigStatus[config.name] = { tested: true, success: false };
       saveCloudMailConfigStatus();
@@ -325,7 +325,7 @@ async function deleteCloudMailConfig(index) {
     async function() {
       cloudmailConfigs.splice(index, 1);
       try {
-        const result = await window.go.main.App.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
+        const result = await AppAPI.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
         if (result.error) {
           showToast(_cmT('toast.deleteFailed', '删除失败') + ': ' + result.error, 'error');
           await loadCloudMailConfigs();
@@ -355,7 +355,7 @@ async function clearAllCloudMailConfigs() {
     async function() {
       cloudmailConfigs = [];
       try {
-        const result = await window.go.main.App.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
+        const result = await AppAPI.SaveCloudMailConfigs(JSON.stringify(cloudmailConfigs));
         if (result.error) {
           showToast(_cmT('toast.clearFailed', '清空失败') + ': ' + result.error, 'error');
           await loadCloudMailConfigs();
@@ -379,7 +379,7 @@ async function autoTestAllCloudMailConfigs() {
   for (let i = 0; i < cloudmailConfigs.length; i++) {
     const config = cloudmailConfigs[i];
     try {
-      const result = await window.go.main.App.TestCloudMailConnection(JSON.stringify(config));
+      const result = await AppAPI.TestCloudMailConnection(JSON.stringify(config));
       if (result.error) {
         cloudmailConfigStatus[config.name] = { tested: true, success: false };
       } else {

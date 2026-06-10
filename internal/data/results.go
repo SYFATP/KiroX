@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	kiro_rs "reg_go/internal/kiro_rs"
 )
 
 // SaveKiroSuccess 以明文 JSON 数组形式把成功注册的账号写入 outDir/accounts.json。
@@ -33,6 +35,14 @@ func SaveKiroSuccess(result map[string]interface{}, outDir string) error {
 		"region":       "us-east-1",
 		"email":        emailAddr,
 		"time":         time.Now().Format("2006-01-02 15:04:05"),
+	}
+	if payload, err := kiro_rs.BuildPayloadFromResult(result, ""); err == nil {
+		item["profileArn"] = payload.ProfileARN
+		item["authMethod"] = payload.AuthMethod
+		item["authRegion"] = payload.AuthRegion
+		item["apiRegion"] = payload.APIRegion
+		item["machineId"] = payload.MachineID
+		item["tokenSource"] = "kirox_registration"
 	}
 	if verify != nil {
 		item["creditUsed"] = verify["credit_used"]

@@ -8,6 +8,7 @@ import (
 	"reg_go/internal/browser"
 	"reg_go/internal/data"
 	"reg_go/internal/email"
+	kiro_rs "reg_go/internal/kiro_rs"
 	"reg_go/internal/proxy"
 	"reg_go/internal/subscription"
 
@@ -322,6 +323,28 @@ func (a *App) DetectProxy(raw string) proxy.Info {
 func (a *App) ResetProxy() map[string]interface{} {
 	storage.ResetProxy()
 	return map[string]interface{}{"success": true}
+}
+
+// GetKiroRsConfig 获取 kiro.rs 入库配置。
+func (a *App) GetKiroRsConfig() storage.KiroRsConfig {
+	return storage.GetKiroRsConfig()
+}
+
+// SaveKiroRsConfig 保存 kiro.rs 入库配置。
+func (a *App) SaveKiroRsConfig(cfg storage.KiroRsConfig) map[string]interface{} {
+	if err := storage.SetKiroRsConfig(cfg); err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}
+	}
+	return map[string]interface{}{"success": true, "config": storage.GetKiroRsConfig()}
+}
+
+// TestKiroRsConnection 测试 kiro.rs 管理接口连通性。
+func (a *App) TestKiroRsConnection(cfg storage.KiroRsConfig) map[string]interface{} {
+	if cfg.BaseURL == "" && cfg.APIKey == "" {
+		cfg = storage.GetKiroRsConfig()
+	}
+	res := kiro_rs.CheckConnection(context.Background(), cfg.BaseURL, cfg.APIKey)
+	return map[string]interface{}{"success": res.OK, "ok": res.OK, "status": res.Status, "message": res.Message}
 }
 
 // GetLanguage 获取当前界面语言代码，空字符串表示未设置（前端应回落到 OS 语言）

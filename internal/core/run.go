@@ -108,7 +108,6 @@ func (r *Registrar) formatError(step string, err error) string {
 	return friendlyStep + "失败: " + errMsg
 }
 
-
 // ctxCancelled 检查 context 是否已取消
 func (r *Registrar) ctxCancelled() bool {
 	return r.Ctx != nil && r.Ctx.Err() != nil
@@ -307,10 +306,15 @@ func (r *Registrar) Run() map[string]interface{} {
 		}
 	}
 
-	verify := r.VerifyAlive(awsToken)
-	if suspended, _ := verify["suspended"].(bool); suspended {
-		log.Printf("%s 账号已被封禁", prefix)
-		return map[string]interface{}{"status": "failed", "error": "suspended", "email": r.Email, "passwordSet": true}
+	verify := map[string]interface{}{"alive": true, "skipped": true}
+	if r.Cfg.AutoVerifyAlive {
+		verify = r.VerifyAlive(awsToken)
+		if suspended, _ := verify["suspended"].(bool); suspended {
+			log.Printf("%s 账号已被封禁", prefix)
+			return map[string]interface{}{"status": "failed", "error": "suspended", "email": r.Email, "passwordSet": true}
+		}
+	} else {
+		log.Printf("%s 注册完成，已跳过自动测活", prefix)
 	}
 
 	alive, _ := verify["alive"].(bool)

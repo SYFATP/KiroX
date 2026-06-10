@@ -43,7 +43,7 @@ async function addOutlookAccounts() {
     return;
   }
   try {
-    var result = await window.go.main.App.AddOutlookAccounts(data);
+    var result = await AppAPI.AddOutlookAccounts(data);
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -59,12 +59,26 @@ async function addOutlookAccounts() {
 
 async function importOutlookFile() {
   try {
-    var filePath = await window.go.main.App.SelectOutlookFile();
+    if (AppAPI.isWeb && AppAPI.isWeb()) {
+      var text = await AppAPI.selectLocalTextFile();
+      if (!text) return;
+      var webResult = await AppAPI.AddOutlookAccounts(text);
+      if (webResult.error) {
+        showToast(webResult.error, 'error');
+        return;
+      }
+      await loadOutlookAccountsList();
+      closeAddOutlookModal();
+      showToast(_accT('accounts.importSummary', { n: webResult.added, total: webResult.total }, '成功导入 {n} 个账号，当前共 {total} 个'));
+      return;
+    }
+
+    var filePath = await AppAPI.SelectOutlookFile();
     if (!filePath) {
       return;
     }
 
-    var result = await window.go.main.App.ImportOutlookFile(filePath);
+    var result = await AppAPI.ImportOutlookFile(filePath);
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -80,7 +94,7 @@ async function importOutlookFile() {
 
 async function loadOutlookAccountsList() {
   try {
-    var accounts = await window.go.main.App.GetOutlookAccounts();
+    var accounts = await AppAPI.GetOutlookAccounts();
     outlookAllAccounts = accounts || [];
     renderOutlookPage();
   } catch(e) {
@@ -148,7 +162,7 @@ async function deleteOutlookAccount(email) {
     _accT('accounts.deleteConfirm', '确认删除'),
     async function() {
       try {
-        var result = await window.go.main.App.DeleteOutlookAccount(email);
+        var result = await AppAPI.DeleteOutlookAccount(email);
         if (result.error) {
           showToast(result.error, 'error');
           return;
@@ -169,7 +183,7 @@ function clearAllOutlookAccounts() {
     _accT('accounts.clearAllConfirm', '确认清空'),
     async function() {
       try {
-        var result = await window.go.main.App.ClearOutlookAccounts();
+        var result = await AppAPI.ClearOutlookAccounts();
         if (result.error) {
           showToast(result.error, 'error');
           return;
@@ -195,7 +209,7 @@ function clearRegisteredOutlookAccounts() {
     _accT('accounts.deleteConfirm', '确认删除'),
     async function() {
       try {
-        var result = await window.go.main.App.ClearRegisteredOutlookAccounts();
+        var result = await AppAPI.ClearRegisteredOutlookAccounts();
         if (result.error) {
           showToast(result.error, 'error');
           return;

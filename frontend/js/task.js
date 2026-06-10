@@ -191,7 +191,7 @@ async function startTask() {
       saveConfig();
     }
 
-    var result = await window.go.main.App.StartTask(cfg);
+    var result = await AppAPI.StartTask(cfg);
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -226,7 +226,7 @@ function confirmAction() {
 
 async function stopTask() {
   try {
-    var result = await window.go.main.App.StopTask();
+    var result = await AppAPI.StopTask();
     if (result.error) { 
       showToast(result.error, 'error'); 
       return; 
@@ -268,16 +268,12 @@ async function closeUpdateModal() {
 
 function openReleasePage() {
   var url = window._latestReleaseURL || 'https://github.com/huey1in/kirox/releases/latest';
-  if (window.go && window.go.main && window.go.main.App && window.go.main.App.OpenURL) {
-    window.go.main.App.OpenURL(url);
-  } else {
-    window.open(url, '_blank');
-  }
+  AppAPI.openURL(url);
 }
 
 async function checkUpdateManually() {
   try {
-    var result = await window.go.main.App.CheckUpdate();
+    var result = await AppAPI.CheckUpdate();
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -298,7 +294,7 @@ async function checkUpdateManually() {
 var lastOutlookUpdate = 0;
 setInterval(async function() {
   try {
-    var s = await window.go.main.App.GetStatus();
+    var s = await AppAPI.GetStatus();
     updateUIStatus(s.running);
     // 注册页状态徽章
     var regBadge = document.getElementById('reg-status-badge');
@@ -350,7 +346,7 @@ setInterval(async function() {
     }
   } catch(e) {}
   try {
-    var kiroLogs = await window.go.main.App.GetLogs() || [];
+    var kiroLogs = await AppAPI.GetLogs() || [];
     window._kiroLogs = kiroLogs;
     renderUnifiedLogs();
   } catch(e) {}

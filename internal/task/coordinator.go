@@ -13,6 +13,7 @@ import (
 	"reg_go/internal/core"
 	"reg_go/internal/data"
 	"reg_go/internal/email"
+	kiro_rs "reg_go/internal/kiro_rs"
 	"reg_go/internal/proxy"
 	"reg_go/internal/storage"
 )
@@ -28,9 +29,10 @@ type StartTaskRequest struct {
 	MoeMailConfigs    map[string][]email.MoeMailConfig `json:"moemailConfigs"`    // 域名 -> 配置列表映射
 	MoeMailRandomMode bool                             `json:"moemailRandomMode"` // 是否为随机模式
 
-	CloudMailDomains    []string                            `json:"cloudmailDomains"`
-	CloudMailConfigs    map[string][]email.CloudMailConfig  `json:"cloudmailConfigs"`
-	CloudMailRandomMode bool                                `json:"cloudmailRandomMode"`
+	CloudMailDomains    []string                           `json:"cloudmailDomains"`
+	CloudMailConfigs    map[string][]email.CloudMailConfig `json:"cloudmailConfigs"`
+	CloudMailRandomMode bool                               `json:"cloudmailRandomMode"`
+	AutoVerifyAlive     bool                               `json:"autoVerifyAlive"`
 }
 
 // StartTask 公开方法（包装器）
@@ -185,6 +187,7 @@ func runBatch(req StartTaskRequest, emailProvider string, outlookAccounts []emai
 
 	taskConfig := core.NewConfig()
 	taskConfig.EmailProvider = emailProvider
+	taskConfig.AutoVerifyAlive = req.AutoVerifyAlive
 	taskConfig.Proxy = storage.GetProxy()
 	if taskConfig.Proxy != "" {
 		log.Printf("[Kiro] 已启用代理")
@@ -512,6 +515,8 @@ func runBatch(req StartTaskRequest, emailProvider string, outlookAccounts []emai
 		if success {
 			if err := data.SaveKiroSuccess(result, outDir); err != nil {
 				log.Printf("[Kiro] 保存结果失败: %v", err)
+			} else {
+				uploadKiroRsCredential(taskCtx, result)
 			}
 		}
 	}
@@ -598,6 +603,25 @@ func runBatch(req StartTaskRequest, emailProvider string, outlookAccounts []emai
 	log.Println("[Kiro] ═══════════════════════════════")
 }
 
+func uploadKiroRsCredential(ctx context.Context, result map[string]interface{}) {
+	cfg := storage.GetKiroRsConfig()
+	if !cfg.Enabled {
+		return
+	}
+	emailAddr, _ := result["email"].(string)
+	payload, err := kiro_rs.BuildPayloadFromResult(result, storage.GetProxy())
+	if err != nil {
+		log.Printf("[Kiro] kiro.rs 入库跳过: %s %v", emailAddr, err)
+		return
+	}
+	res, err := kiro_rs.UploadCredential(ctx, cfg.BaseURL, cfg.APIKey, payload)
+	if err != nil {
+		log.Printf("[Kiro] kiro.rs 入库失败: %s %v", payload.Email, err)
+		return
+	}
+	log.Printf("[Kiro] kiro.rs 入库成功: %s credentialId=%d %s", payload.Email, res.CredentialID, res.Message)
+}
+
 // classifyError 根据错误信息粗分类，用于统计展示。
 func classifyError(errorMsg string) string {
 	if errorMsg == "" {
@@ -619,10 +643,10 @@ func isKillSwitchError(errorMsg string) bool {
 		return false
 	}
 	triggers := []string{
-		"send-otp 失败 (400)",     // Step9 原始 400
-		"注册被拦截",                // formatError 对 BLOCKED/注册请求被拦截 的翻译
-		"IP或浏览器指纹被检测",    // 指纹/IP 被标记
-		"BLOCKED",                  // 响应体里直接包含的风控标记
+		"send-otp 失败 (400)", // Step9 原始 400
+		"注册被拦截",             // formatError 对 BLOCKED/注册请求被拦截 的翻译
+		"IP或浏览器指纹被检测",       // 指纹/IP 被标记
+		"BLOCKED",           // 响应体里直接包含的风控标记
 		"注册请求被拦截",
 	}
 	for _, t := range triggers {

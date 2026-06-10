@@ -16,6 +16,9 @@ const (
 	keyResultOutputDir = "result_output_dir"
 	keyProxy           = "proxy"
 	keyLanguage        = "language"
+	keyKiroRsEnabled   = "kiro_rs_enabled"
+	keyKiroRsBaseURL   = "kiro_rs_base_url"
+	keyKiroRsAPIKey    = "kiro_rs_api_key"
 )
 
 var (
@@ -27,7 +30,15 @@ var (
 	_proxyOnce        sync.Once
 	_language         string
 	_languageOnce     sync.Once
+	_kiroRsConfig     KiroRsConfig
+	_kiroRsOnce       sync.Once
 )
+
+type KiroRsConfig struct {
+	Enabled bool   `json:"enabled"`
+	BaseURL string `json:"baseUrl"`
+	APIKey  string `json:"apiKey"`
+}
 
 // GetDefaultDataDir 获取默认应用数据目录
 func GetDefaultDataDir() string {
@@ -79,7 +90,7 @@ func loadConfigMap() map[string]string {
 func saveConfigMap(m map[string]string) error {
 	os.MkdirAll(GetDefaultDataDir(), 0755)
 	var b strings.Builder
-	for _, k := range []string{keyDataDir, keyResultOutputDir, keyProxy, keyLanguage} {
+	for _, k := range []string{keyDataDir, keyResultOutputDir, keyProxy, keyLanguage, keyKiroRsEnabled, keyKiroRsBaseURL, keyKiroRsAPIKey} {
 		if v := strings.TrimSpace(m[k]); v != "" {
 			b.WriteString(k)
 			b.WriteByte('=')
@@ -291,6 +302,48 @@ func SetLanguage(lang string) error {
 	_language = lang
 	_languageOnce = sync.Once{}
 	_languageOnce.Do(func() {})
+	return nil
+}
+
+// GetKiroRsConfig 返回 kiro.rs 入库配置。
+func GetKiroRsConfig() KiroRsConfig {
+	_kiroRsOnce.Do(func() {
+		m := loadConfigMap()
+		_kiroRsConfig = KiroRsConfig{
+			Enabled: strings.TrimSpace(m[keyKiroRsEnabled]) == "true",
+			BaseURL: strings.TrimSpace(m[keyKiroRsBaseURL]),
+			APIKey:  strings.TrimSpace(m[keyKiroRsAPIKey]),
+		}
+	})
+	return _kiroRsConfig
+}
+
+// SetKiroRsConfig 保存 kiro.rs 入库配置。
+func SetKiroRsConfig(cfg KiroRsConfig) error {
+	cfg.BaseURL = strings.TrimSpace(cfg.BaseURL)
+	cfg.APIKey = strings.TrimSpace(cfg.APIKey)
+	m := loadConfigMap()
+	if cfg.Enabled {
+		m[keyKiroRsEnabled] = "true"
+	} else {
+		delete(m, keyKiroRsEnabled)
+	}
+	if cfg.BaseURL == "" {
+		delete(m, keyKiroRsBaseURL)
+	} else {
+		m[keyKiroRsBaseURL] = cfg.BaseURL
+	}
+	if cfg.APIKey == "" {
+		delete(m, keyKiroRsAPIKey)
+	} else {
+		m[keyKiroRsAPIKey] = cfg.APIKey
+	}
+	if err := saveConfigMap(m); err != nil {
+		return err
+	}
+	_kiroRsConfig = cfg
+	_kiroRsOnce = sync.Once{}
+	_kiroRsOnce.Do(func() {})
 	return nil
 }
 

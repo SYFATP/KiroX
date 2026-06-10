@@ -2,7 +2,9 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"log"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -13,6 +15,16 @@ import (
 var assets embed.FS
 
 func main() {
+	webMode := flag.Bool("web", false, "run as headless web server")
+	addr := flag.String("addr", "127.0.0.1:8171", "web server listen address")
+	webPassword := flag.String("web-password", os.Getenv("KIROX_WEB_PASSWORD"), "web login password")
+	flag.Parse()
+
+	if *webMode {
+		runWebServer(*addr, *webPassword)
+		return
+	}
+
 	runDesktopApp()
 }
 

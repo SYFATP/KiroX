@@ -26,6 +26,8 @@ type Config struct {
 	Proxy string
 	Debug bool
 
+	AutoVerifyAlive bool
+
 	EmailProvider  string
 	UseOutlook     bool
 	OutlookAccount *email.OutlookAccount
@@ -56,6 +58,7 @@ func NewConfig() *Config {
 		KiroRedirectURI: "https://app.kiro.dev/signin/oauth",
 		Password:        GenPassword(),
 		FullName:        "Test User",
+		AutoVerifyAlive: true,
 	}
 }
 
@@ -83,4 +86,3 @@ func GenPassword() string {
 	rand.Shuffle(len(pw), func(i, j int) { pw[i], pw[j] = pw[j], pw[i] })
 	return string(pw)
 }
-

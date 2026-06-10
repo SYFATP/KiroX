@@ -14,7 +14,7 @@ function escapeProxyHtml(s) {
 
 async function loadProxyPool() {
   try {
-    var list = await window.go.main.App.ListProxyPool();
+    var list = await AppAPI.ListProxyPool();
     proxyPool = list || [];
   } catch (e) {
     proxyPool = [];
@@ -108,7 +108,7 @@ async function savePendingProxyRow(idx, rawURL) {
     }
   }
   try {
-    var res = await window.go.main.App.AddProxyEntry('', url, weight);
+    var res = await AppAPI.AddProxyEntry('', url, weight);
     if (res && res.error) {
       showToast(res.error, 'error');
       return;
@@ -132,7 +132,7 @@ async function updateProxyEntryURL(id, newURL) {
   }
   if (url === entry.url) return;
   try {
-    var res = await window.go.main.App.UpdateProxyEntry(id, '', url, entry.weight || 1, entry.enabled);
+    var res = await AppAPI.UpdateProxyEntry(id, '', url, entry.weight || 1, entry.enabled);
     if (res && res.error) {
       showToast(res.error, 'error');
       await loadProxyPool();
@@ -157,7 +157,7 @@ async function updateProxyEntry(id, field, value) {
     entry.enabled = !!value;
   }
   try {
-    var res = await window.go.main.App.UpdateProxyEntry(id, '', entry.url || '', entry.weight || 1, entry.enabled);
+    var res = await AppAPI.UpdateProxyEntry(id, '', entry.url || '', entry.weight || 1, entry.enabled);
     if (res && res.error) {
       showToast(res.error, 'error');
       await loadProxyPool();
@@ -173,14 +173,14 @@ async function updateProxyEntry(id, field, value) {
 async function deleteProxyEntry(id, silent) {
   if (silent) {
     try {
-      await window.go.main.App.DeleteProxyEntry(id);
+      await AppAPI.DeleteProxyEntry(id);
     } catch (e) {}
     await loadProxyPool();
     return;
   }
   showConfirmModal('删除代理', '确认从池中删除该代理？', '确认删除', async function() {
     try {
-      var res = await window.go.main.App.DeleteProxyEntry(id);
+      var res = await AppAPI.DeleteProxyEntry(id);
       if (res && res.error) {
         showToast(res.error, 'error');
         return;
@@ -198,7 +198,7 @@ async function testProxyEntryByIdx(idx) {
   if (!p || !p.url) return;
   showToast('正在测试…');
   try {
-    var info = await window.go.main.App.TestProxyEntry(p.url);
+    var info = await AppAPI.TestProxyEntry(p.url);
     if (info && info.ok) {
       var loc = [info.country, info.region, info.city].filter(Boolean).join(' · ');
       showToast((info.scheme || '').toUpperCase() + ' · ' + (info.ip || '') + (loc ? ' (' + loc + ')' : ''));

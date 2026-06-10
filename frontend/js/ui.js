@@ -219,7 +219,7 @@ async function loadMoeMailDomainsToList() {
   listDiv.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">' + _uiT('common.loading', '加载中...') + '</div>';
 
   try {
-    const configs = await window.go.main.App.GetMoeMailConfigs();
+    const configs = await AppAPI.GetMoeMailConfigs();
 
     if (!configs || configs.length === 0) {
       listDiv.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">' + _uiT('moemail.noDomainsHint', '暂无配置，请先在设置页添加') + '</div>';
@@ -334,7 +334,7 @@ async function loadCloudMailDomainsToList() {
   listDiv.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">' + _uiT('common.loading', '加载中...') + '</div>';
 
   try {
-    const configs = await window.go.main.App.GetCloudMailConfigs();
+    const configs = await AppAPI.GetCloudMailConfigs();
     if (!configs || configs.length === 0) {
       listDiv.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">' + _uiT('cloudmail.noDomainsHint', '暂无配置，请先在邮箱池页添加') + '</div>';
       return;

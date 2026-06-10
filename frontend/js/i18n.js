@@ -59,7 +59,14 @@
         proxy: '代理',
         proxyDesc: '所有注册请求走该代理；留空=直连。支持 http/https/socks5 完整 URL，也支持 host:port:user:pass、host:port、user:pass@host:port 等简写。',
         proxyPlaceholder: '例如 http://user:pass@127.0.0.1:7890',
-        sound: '提示音', soundDesc: '任务结束时播放提示音'
+        sound: '提示音', soundDesc: '任务结束时播放提示音',
+        kiroRsTitle: 'kiro.rs 入库',
+        kiroRsDesc: '注册成功后自动把 Builder ID 凭据上传到 kiro.rs 管理接口',
+        kiroRsEnabled: '启用注册成功后自动入库',
+        kiroRsBaseUrlPlaceholder: 'https://kiro.example.com 或 https://kiro.example.com/admin',
+        kiroRsApiKey: 'API Key',
+        kiroRsTest: '测试连接',
+        kiroRsSaved: 'kiro.rs 配置已保存'
       },
       logs: { title: '运行日志', copyLog: '复制日志', empty: '暂无日志' },
       register: {
@@ -72,6 +79,8 @@
         cloudmailHint: '使用 Cloud-Mail 自部署邮箱注册。⚠️ 每次注册会创建永久账号，需手动清理。',
         cloudmailWarn: '⚠️ 每次注册会在 Cloud-Mail 上创建一个永久账号，需手动清理',
         outlookHintFull: '使用微软邮箱进行注册，代理配置请在设置页设置。',
+        autoVerifyAlive: '注册完成后自动测活',
+        autoVerifyAliveDesc: '开启后会在 token 获取成功后查询用量/模型；关闭后 token 获取成功即算注册成功。',
         modeRandom: '随机', modeRoundRobin: '轮询',
         startBtn: '开始注册', stopBtn: '停止'
       },
@@ -310,7 +319,14 @@
         proxy: 'Proxy',
         proxyDesc: 'All requests use this proxy; empty = direct. Accepts http/https/socks5 URLs or shortcuts like host:port:user:pass.',
         proxyPlaceholder: 'e.g. http://user:pass@127.0.0.1:7890',
-        sound: 'Sound', soundDesc: 'Play a sound when a task ends'
+        sound: 'Sound', soundDesc: 'Play a sound when a task ends',
+        kiroRsTitle: 'kiro.rs upload',
+        kiroRsDesc: 'Upload Builder ID credentials to the kiro.rs admin API after successful registration',
+        kiroRsEnabled: 'Enable automatic upload after registration success',
+        kiroRsBaseUrlPlaceholder: 'https://kiro.example.com or https://kiro.example.com/admin',
+        kiroRsApiKey: 'API Key',
+        kiroRsTest: 'Test connection',
+        kiroRsSaved: 'kiro.rs settings saved'
       },
       logs: { title: 'Logs', copyLog: 'Copy logs', empty: 'No logs' },
       register: {
@@ -323,6 +339,8 @@
         cloudmailHint: 'Register using self-hosted Cloud-Mail. ⚠️ Each run creates a permanent account — clean up manually.',
         cloudmailWarn: '⚠️ Each registration creates a permanent account on Cloud-Mail. Clean up manually.',
         outlookHintFull: 'Register using Microsoft mailboxes. Configure proxy in Settings.',
+        autoVerifyAlive: 'Auto verify account after registration',
+        autoVerifyAliveDesc: 'When enabled, usage/models are checked after tokens are acquired. When disabled, successful token acquisition counts as success.',
         modeRandom: 'Random', modeRoundRobin: 'Round-robin',
         startBtn: 'Start', stopBtn: 'Stop'
       },
@@ -561,7 +579,14 @@
         proxy: 'プロキシ',
         proxyDesc: 'すべてのリクエストでこのプロキシを使用。空欄=直接接続。http/https/socks5 のURL、または host:port:user:pass などの省略形式に対応。',
         proxyPlaceholder: '例: http://user:pass@127.0.0.1:7890',
-        sound: '通知音', soundDesc: 'タスク終了時に通知音を鳴らす'
+        sound: '通知音', soundDesc: 'タスク終了時に通知音を鳴らす',
+        kiroRsTitle: 'kiro.rs 登録',
+        kiroRsDesc: '登録成功後に Builder ID 認証情報を kiro.rs 管理 API へアップロードします',
+        kiroRsEnabled: '登録成功後の自動アップロードを有効化',
+        kiroRsBaseUrlPlaceholder: 'https://kiro.example.com または https://kiro.example.com/admin',
+        kiroRsApiKey: 'API Key',
+        kiroRsTest: '接続テスト',
+        kiroRsSaved: 'kiro.rs 設定を保存しました'
       },
       logs: { title: 'ログ', copyLog: 'ログをコピー', empty: 'ログなし' },
       register: {
@@ -574,6 +599,8 @@
         cloudmailHint: '自己ホスト型 Cloud-Mail で登録します。⚠️ 毎回永続的なアカウントが作成されるため、手動で削除してください。',
         cloudmailWarn: '⚠️ 登録のたびに Cloud-Mail 上で永続的なアカウントが作成されます。手動で削除してください。',
         outlookHintFull: 'Microsoft メールで登録します。プロキシは設定ページで構成してください。',
+        autoVerifyAlive: '登録完了後に自動疎通確認',
+        autoVerifyAliveDesc: 'オンの場合は token 取得後に usage/models を確認します。オフの場合は token 取得成功で登録成功とします。',
         modeRandom: 'ランダム', modeRoundRobin: 'ラウンドロビン',
         startBtn: '登録開始', stopBtn: '停止'
       },
@@ -830,8 +857,8 @@
     // 持久化到后端（异步，不阻塞 UI）
     if (!options || options.persist !== false) {
       try {
-        if (window.go && window.go.main && window.go.main.App && window.go.main.App.SetLanguage) {
-          window.go.main.App.SetLanguage(lang);
+        if (window.AppAPI && AppAPI.SetLanguage) {
+          AppAPI.SetLanguage(lang);
         }
       } catch (e) {}
     }
@@ -843,8 +870,8 @@
     var lang = '';
     // 1. 后端持久化值
     try {
-      if (window.go && window.go.main && window.go.main.App && window.go.main.App.GetLanguage) {
-        lang = await window.go.main.App.GetLanguage();
+      if (window.AppAPI && AppAPI.GetLanguage) {
+        lang = await AppAPI.GetLanguage();
       }
     } catch (e) {}
     // 2. localStorage 回落
@@ -854,8 +881,8 @@
     // 3. OS 探测
     if (!lang) {
       try {
-        if (window.go && window.go.main && window.go.main.App && window.go.main.App.GetOSLanguage) {
-          lang = await window.go.main.App.GetOSLanguage();
+        if (window.AppAPI && AppAPI.GetOSLanguage) {
+          lang = await AppAPI.GetOSLanguage();
         }
       } catch (e) {}
     }

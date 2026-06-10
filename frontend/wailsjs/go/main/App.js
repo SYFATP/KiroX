@@ -54,6 +54,10 @@ export function GetDataDir() {
   return window['go']['main']['App']['GetDataDir']();
 }
 
+export function GetKiroRsConfig() {
+  return window['go']['main']['App']['GetKiroRsConfig']();
+}
+
 export function GetLanguage() {
   return window['go']['main']['App']['GetLanguage']();
 }
@@ -146,6 +150,10 @@ export function SaveCloudMailConfigs(arg1) {
   return window['go']['main']['App']['SaveCloudMailConfigs'](arg1);
 }
 
+export function SaveKiroRsConfig(arg1) {
+  return window['go']['main']['App']['SaveKiroRsConfig'](arg1);
+}
+
 export function SaveMoeMailConfigs(arg1) {
   return window['go']['main']['App']['SaveMoeMailConfigs'](arg1);
 }
@@ -184,6 +192,10 @@ export function StopTask() {
 
 export function TestCloudMailConnection(arg1) {
   return window['go']['main']['App']['TestCloudMailConnection'](arg1);
+}
+
+export function TestKiroRsConnection(arg1) {
+  return window['go']['main']['App']['TestKiroRsConnection'](arg1);
 }
 
 export function TestMoeMailConnection(arg1) {

@@ -80,7 +80,7 @@ document.addEventListener('click', function(e) {
 
 async function loadInfoVersion() {
   try {
-    var data = await window.go.main.App.GetOverview();
+    var data = await AppAPI.GetOverview();
     var ver = (data && data.version) ? data.version : '';
     if (ver) {
       ['info-version-detail', 'info-version-detail2'].forEach(function(id) {
@@ -97,7 +97,7 @@ async function loadInfoVersion() {
   var tagEl = document.getElementById('info-changelog-version');
   if (changelogEl) changelogEl.innerHTML = '<span style="color:var(--text-muted);">' + tr('common.loading', '加载中...') + '</span>';
   try {
-    var result = await window.go.main.App.CheckUpdate();
+    var result = await AppAPI.CheckUpdate();
     if (result.error) {
       if (changelogEl) changelogEl.innerHTML = '<span style="color:var(--text-muted);">' + tr('common.loadFailed', '加载失败') + ': ' + result.error + '</span>';
       return;
@@ -133,16 +133,26 @@ function tr(key, fallback) {
 // 存储目录设置
 async function loadDataDir() {
   try {
-    var dir = await window.go.main.App.GetDataDir();
+    var dir = await AppAPI.GetDataDir();
     document.getElementById('cfg-data-dir').value = dir || '';
   } catch(e) {}
 }
 
 async function selectDataDir() {
   try {
-    var path = await window.go.main.App.SelectDirectory();
-    if (!path) return;
-    var result = await window.go.main.App.SetDataDir(path);
+    var path;
+    if (AppAPI.isWeb && AppAPI.isWeb()) {
+      var el = document.getElementById('cfg-data-dir');
+      path = (el && el.value ? el.value.trim() : '');
+      if (!path) {
+        showToast('请先输入服务器/容器内存储路径', 'error');
+        return;
+      }
+    } else {
+      path = await AppAPI.SelectDirectory();
+      if (!path) return;
+    }
+    var result = await AppAPI.SetDataDir(path);
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -156,7 +166,7 @@ async function selectDataDir() {
 
 async function resetDataDir() {
   try {
-    var result = await window.go.main.App.ResetDataDir();
+    var result = await AppAPI.ResetDataDir();
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -171,7 +181,7 @@ async function resetDataDir() {
 // 注册结果输出目录设置
 async function loadResultOutputDir() {
   try {
-    var dir = await window.go.main.App.GetResultOutputDir();
+    var dir = await AppAPI.GetResultOutputDir();
     var el = document.getElementById('cfg-result-output-dir');
     if (el) el.value = dir || '';
   } catch(e) {}
@@ -179,9 +189,19 @@ async function loadResultOutputDir() {
 
 async function selectResultOutputDir() {
   try {
-    var path = await window.go.main.App.SelectDirectory();
-    if (!path) return;
-    var result = await window.go.main.App.SetResultOutputDir(path);
+    var path;
+    if (AppAPI.isWeb && AppAPI.isWeb()) {
+      var el = document.getElementById('cfg-result-output-dir');
+      path = (el && el.value ? el.value.trim() : '');
+      if (!path) {
+        showToast('请先输入服务器/容器内输出路径', 'error');
+        return;
+      }
+    } else {
+      path = await AppAPI.SelectDirectory();
+      if (!path) return;
+    }
+    var result = await AppAPI.SetResultOutputDir(path);
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -195,7 +215,7 @@ async function selectResultOutputDir() {
 
 async function resetResultOutputDir() {
   try {
-    var result = await window.go.main.App.ResetResultOutputDir();
+    var result = await AppAPI.ResetResultOutputDir();
     if (result.error) {
       showToast(result.error, 'error');
       return;
@@ -210,7 +230,7 @@ async function resetResultOutputDir() {
 // 代理设置
 async function loadProxy() {
   try {
-    var p = await window.go.main.App.GetProxy();
+    var p = await AppAPI.GetProxy();
     var el = document.getElementById('cfg-proxy');
     if (el) el.value = p || '';
   } catch(e) {}
@@ -251,7 +271,7 @@ async function saveProxy() {
   try {
     if (el.value.trim()) renderProxyDetectCard('loading');
     else renderProxyDetectCard('hidden');
-    var result = await window.go.main.App.SetProxy(el.value.trim());
+    var result = await AppAPI.SetProxy(el.value.trim());
     if (result.error) {
       showToast(result.error, 'error');
       renderProxyDetectCard('hidden');
@@ -275,13 +295,57 @@ async function saveProxy() {
 
 async function resetProxy() {
   try {
-    await window.go.main.App.ResetProxy();
+    await AppAPI.ResetProxy();
     var el = document.getElementById('cfg-proxy');
     if (el) el.value = '';
     renderProxyDetectCard('hidden');
     showToast(tr('toast.proxyCleared', '代理已清除'));
   } catch(e) {
     showToast(tr('toast.operationFailed', '操作失败') + ': ' + e.message, 'error');
+  }
+}
+
+// kiro.rs 入库设置
+async function loadKiroRsConfig() {
+  try {
+    var cfg = await AppAPI.GetKiroRsConfig();
+    var enabled = document.getElementById('cfg-kiro-rs-enabled');
+    var baseUrl = document.getElementById('cfg-kiro-rs-base-url');
+    var apiKey = document.getElementById('cfg-kiro-rs-api-key');
+    if (enabled) enabled.checked = !!(cfg && cfg.enabled);
+    if (baseUrl) baseUrl.value = (cfg && cfg.baseUrl) || '';
+    if (apiKey) apiKey.value = (cfg && cfg.apiKey) || '';
+  } catch(e) {}
+}
+
+function readKiroRsConfigForm() {
+  return {
+    enabled: !!(document.getElementById('cfg-kiro-rs-enabled') && document.getElementById('cfg-kiro-rs-enabled').checked),
+    baseUrl: (document.getElementById('cfg-kiro-rs-base-url') || {}).value || '',
+    apiKey: (document.getElementById('cfg-kiro-rs-api-key') || {}).value || ''
+  };
+}
+
+async function saveKiroRsConfig() {
+  try {
+    var result = await AppAPI.SaveKiroRsConfig(readKiroRsConfigForm());
+    if (result && result.error) {
+      showToast(result.error, 'error');
+      return;
+    }
+    showToast(tr('settings.kiroRsSaved', 'kiro.rs 配置已保存'));
+  } catch(e) {
+    showToast(tr('toast.operationFailed', '操作失败') + ': ' + e.message, 'error');
+  }
+}
+
+async function testKiroRsConnection() {
+  try {
+    var result = await AppAPI.TestKiroRsConnection(readKiroRsConfigForm());
+    var ok = !!(result && (result.ok || result.success));
+    showToast((result && result.message) || (ok ? tr('toast.testOk', '连接成功') : tr('toast.testFailed', '连接失败')), ok ? 'success' : 'error');
+  } catch(e) {
+    showToast(tr('toast.testFailed', '连接失败') + ': ' + e.message, 'error');
   }
 }
 
@@ -299,7 +363,8 @@ function getFormConfig() {
     count: parseInt(document.getElementById('cfg-count').value) || 1,
     concurrency: parseInt(document.getElementById('cfg-concurrency').value) || 1,
     delay: parseInt(document.getElementById('cfg-delay').value) || 3,
-    emailProvider: selectedEmailProvider || 'outlook'
+    emailProvider: selectedEmailProvider || 'outlook',
+    autoVerifyAlive: document.getElementById('cfg-auto-verify-alive')?.checked !== false
   };
 
   // 如果选择了 MoeMail，添加域名信息和前缀配置
@@ -373,7 +438,7 @@ function saveConfig() {
 
 
 // 自动保存
-['cfg-count', 'cfg-concurrency', 'cfg-delay'].forEach(function(id) {
+['cfg-count', 'cfg-concurrency', 'cfg-delay', 'cfg-auto-verify-alive'].forEach(function(id) {
   var el = document.getElementById(id);
   if (el) {
     el.addEventListener('change', saveConfig);
@@ -400,21 +465,20 @@ async function loadConfig() {
   // 默认禁用所有功能，等待卡密验证
   
   let retries = 0;
-  while ((!window.go || !window.go.main || !window.go.main.App) && retries < 100) {
+  while (!window.AppAPI && retries < 100) {
     await new Promise(resolve => setTimeout(resolve, 50));
     retries++;
   }
-  if (!window.go || !window.go.main || !window.go.main.App) {
-    console.error('[启动] Wails runtime 加载失败');
-    // 即使失败也显示界面
+  if (!window.AppAPI) {
+    console.error('[启动] AppAPI 加载失败');
     document.getElementById('main-container').style.display = 'block';
     return;
   }
-  console.log('[启动] Wails runtime 已就绪');
+  console.log('[启动] AppAPI 已就绪');
 
   // 检测平台，macOS 使用原生窗口控件
   try {
-    const env = await window.runtime.Environment();
+    const env = await AppAPI.environment();
     if (env && env.platform === 'darwin') {
       document.body.classList.add('platform-darwin');
     }
@@ -450,14 +514,23 @@ async function loadConfig() {
       document.getElementById('cfg-count').value = cfg.count || 1;
       document.getElementById('cfg-concurrency').value = cfg.concurrency || 1;
       document.getElementById('cfg-delay').value = cfg.delay || 3;
+      var autoVerifyAlive = document.getElementById('cfg-auto-verify-alive');
+      if (autoVerifyAlive) autoVerifyAlive.checked = cfg.autoVerifyAlive !== false;
     }
   } catch(e) {
     console.error('[启动] 加载配置失败:', e);
   }
   loadOutlookAccountsList();
+  if (AppAPI.isWeb && AppAPI.isWeb()) {
+    ['cfg-data-dir', 'cfg-result-output-dir'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.removeAttribute('readonly');
+    });
+  }
   loadDataDir();
   loadResultOutputDir();
   loadProxy();
+  loadKiroRsConfig();
   if (typeof loadProxyPool === 'function') loadProxyPool();
   startOverviewTimer();
   console.log('[启动] 初始化完成');
@@ -530,7 +603,7 @@ function refreshLanguageNavLabel() {
 
 async function checkUpdateOnStartup() {
   try {
-    var result = await window.go.main.App.CheckUpdate();
+    var result = await AppAPI.CheckUpdate();
     if (result && result.hasUpdate) {
       if (typeof showUpdateModal === 'function') showUpdateModal(result);
     }

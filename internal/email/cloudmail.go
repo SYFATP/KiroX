@@ -30,6 +30,35 @@ type CloudMailClient struct {
 	tokenMu sync.Mutex
 }
 
+var (
+	cloudMailClientPool   = map[string]*CloudMailClient{}
+	cloudMailClientPoolMu sync.Mutex
+)
+
+func cloudMailClientKey(config CloudMailConfig) string {
+	return strings.TrimRight(strings.TrimSpace(config.URL), "/") + "\x00" + strings.TrimSpace(config.Email) + "\x00" + config.Password
+}
+
+// GetSharedCloudMailClient 复用同一 cloud-mail 配置的 token，避免并发刷新互相顶掉。
+func GetSharedCloudMailClient(config CloudMailConfig) *CloudMailClient {
+	key := cloudMailClientKey(config)
+	cloudMailClientPoolMu.Lock()
+	defer cloudMailClientPoolMu.Unlock()
+	if c := cloudMailClientPool[key]; c != nil {
+		return c
+	}
+	c := NewCloudMailClient(config)
+	cloudMailClientPool[key] = c
+	return c
+}
+
+// ResetCloudMailClientCache 清空 cloud-mail 共享客户端缓存。
+func ResetCloudMailClientCache() {
+	cloudMailClientPoolMu.Lock()
+	cloudMailClientPool = map[string]*CloudMailClient{}
+	cloudMailClientPoolMu.Unlock()
+}
+
 // CloudMailMessage 邮件信息（与 /api/public/emailList 响应对齐）
 type CloudMailMessage struct {
 	EmailID    int64  `json:"emailId"`
@@ -62,6 +91,12 @@ func NewCloudMailClient(config CloudMailConfig) *CloudMailClient {
 
 // GenToken 通过 /api/public/genToken 获取并缓存 token
 func (c *CloudMailClient) GenToken() error {
+	c.tokenMu.Lock()
+	defer c.tokenMu.Unlock()
+	return c.genTokenLocked()
+}
+
+func (c *CloudMailClient) genTokenLocked() error {
 	body, _ := json.Marshal(map[string]string{
 		"email":    c.config.Email,
 		"password": c.config.Password,
@@ -99,21 +134,18 @@ func (c *CloudMailClient) GenToken() error {
 		return fmt.Errorf("genToken 未返回 token: %s", string(wrap.Data))
 	}
 
-	c.tokenMu.Lock()
 	c.token = data.Token
-	c.tokenMu.Unlock()
 	return nil
 }
 
 // ensureToken 确保已有 token，没有就生成
 func (c *CloudMailClient) ensureToken() error {
 	c.tokenMu.Lock()
-	hasToken := c.token != ""
-	c.tokenMu.Unlock()
-	if hasToken {
+	defer c.tokenMu.Unlock()
+	if c.token != "" {
 		return nil
 	}
-	return c.GenToken()
+	return c.genTokenLocked()
 }
 
 // doAuthorized 调用需要鉴权的接口，遇 401 自动 GenToken 重试一次
@@ -171,18 +203,35 @@ func (c *CloudMailClient) AddUser(emailAddr, password string) error {
 	payload := map[string]interface{}{
 		"list": []map[string]interface{}{user},
 	}
-	respBody, err := c.doAuthorized("/api/public/addUser", payload)
+	wrap, err := c.doAddUser(payload)
 	if err != nil {
 		return err
 	}
-	var wrap cloudMailResp
-	if err := json.Unmarshal(respBody, &wrap); err != nil {
-		return fmt.Errorf("addUser 解析失败: %w, body=%s", err, string(respBody))
+	if wrap.Code == 401 {
+		if err := c.GenToken(); err != nil {
+			return fmt.Errorf("addUser token 失效后重新登录失败: %w", err)
+		}
+		wrap, err = c.doAddUser(payload)
+		if err != nil {
+			return err
+		}
 	}
 	if wrap.Code != 200 {
 		return fmt.Errorf("addUser 业务错误 [%d]: %s", wrap.Code, wrap.Message)
 	}
 	return nil
+}
+
+func (c *CloudMailClient) doAddUser(payload interface{}) (cloudMailResp, error) {
+	var wrap cloudMailResp
+	respBody, err := c.doAuthorized("/api/public/addUser", payload)
+	if err != nil {
+		return wrap, err
+	}
+	if err := json.Unmarshal(respBody, &wrap); err != nil {
+		return wrap, fmt.Errorf("addUser 解析失败: %w, body=%s", err, string(respBody))
+	}
+	return wrap, nil
 }
 
 // EmailList 获取邮件列表
@@ -316,7 +365,7 @@ type CloudMailProvider struct {
 
 // NewCloudMailProvider 创建一个 cloud-mail 邮箱（执行 addUser）
 func NewCloudMailProvider(config CloudMailConfig, name, domain string) (*CloudMailProvider, error) {
-	client := NewCloudMailClient(config)
+	client := GetSharedCloudMailClient(config)
 
 	if domain == "" {
 		if len(config.Domains) > 0 {

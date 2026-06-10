@@ -305,13 +305,13 @@
               <div style="font-size:12px;color:var(--text-muted);margin-top:3px;font-family:var(--font-mono);" id="info-version-detail">-</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;margin-left:auto;">
-              <button onclick="window.go.main.App.OpenURL('https://qm.qq.com/q/RXMTXUlc4w')" class="btn btn-secondary btn-sm" title="QQ 交流群">
+              <button onclick="AppAPI.openURL('https://qm.qq.com/q/RXMTXUlc4w')" class="btn btn-secondary btn-sm" title="QQ 交流群">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
                   <path d="M12 1.5c-3.07 0-5.6 2.31-5.97 5.28-.07.54-.1 1.1-.1 1.66 0 1.05.13 2.06.36 3.01-.5.55-1 1.18-1.41 1.83-.88 1.38-1.49 2.93-1.49 4.27 0 .53.13.85.27 1.03.18.21.45.31.7.31.62 0 1.27-.62 1.83-1.5.32.49.7.94 1.12 1.32-.39.5-.74 1.07-.95 1.69-.21.66-.21 1.39.27 1.95.39.46 1 .67 1.65.74.85.09 1.83-.05 2.78-.32.78-.22 1.55-.55 2.18-.93.63.38 1.4.71 2.18.93.95.27 1.93.41 2.78.32.65-.07 1.26-.28 1.65-.74.48-.56.48-1.29.27-1.95-.21-.62-.56-1.19-.95-1.69.42-.38.8-.83 1.12-1.32.56.88 1.21 1.5 1.83 1.5.25 0 .52-.1.7-.31.14-.18.27-.5.27-1.03 0-1.34-.61-2.89-1.49-4.27-.41-.65-.91-1.28-1.41-1.83.23-.95.36-1.96.36-3.01 0-.56-.03-1.12-.1-1.66C17.6 3.81 15.07 1.5 12 1.5z"/>
                 </svg>
                 <span data-i18n="about.joinGroup">加入交流群</span>
               </button>
-              <button onclick="window.go.main.App.OpenURL('https://t.me/kiroXaitg')" class="btn btn-secondary btn-sm" title="Telegram 群组">
+              <button onclick="AppAPI.openURL('https://t.me/kiroXaitg')" class="btn btn-secondary btn-sm" title="Telegram 群组">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
                   <path d="M9.78 15.92l-.36 4.04c.52 0 .74-.22 1.01-.49l2.42-2.32 5.02 3.67c.92.51 1.58.24 1.82-.85l3.31-15.52v-.01c.29-1.36-.5-1.89-1.4-1.56L1.74 9.36c-1.32.51-1.3 1.25-.23 1.58l4.92 1.54L17.85 5.4c.54-.36 1.04-.16.63.2"/>
                 </svg>
@@ -334,7 +334,7 @@
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;">
               <span style="color:var(--text-secondary);" data-i18n="about.author">作者</span>
-              <div class="author-row" style="margin-top:0;padding:4px 8px;" onclick="window.go.main.App.OpenURL('https://github.com/huey1in')">
+              <div class="author-row" style="margin-top:0;padding:4px 8px;" onclick="AppAPI.openURL('https://github.com/huey1in')">
                 <img src="https://avatars.githubusercontent.com/u/143839232?v=4&size=64" referrerpolicy="no-referrer">
                 <div>
                   <div style="font-size:13px;font-weight:600;color:var(--text);">1in</div>
@@ -437,6 +437,30 @@
                   <div id="proxy-pool-list"></div>
                   <button type="button" onclick="addEmptyProxyRow()" class="btn btn-secondary btn-sm" style="align-self:flex-start;">+ 添加代理</button>
                   <div id="proxy-detect-card" style="display:none;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-item">
+              <div class="settings-item-main">
+                <div class="settings-item-title" data-i18n="settings.kiroRsTitle">kiro.rs 入库</div>
+                <div class="settings-item-desc" data-i18n="settings.kiroRsDesc">注册成功后自动把 Builder ID 凭据上传到 kiro.rs 管理接口</div>
+              </div>
+              <div class="settings-item-action">
+                <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                  <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;">
+                    <div class="toggle-switch">
+                      <input type="checkbox" id="cfg-kiro-rs-enabled">
+                      <span class="toggle-slider"></span>
+                    </div>
+                    <span data-i18n="settings.kiroRsEnabled">启用注册成功后自动入库</span>
+                  </label>
+                  <input type="text" id="cfg-kiro-rs-base-url" placeholder="https://kiro.example.com 或 https://kiro.example.com/admin" data-i18n-placeholder="settings.kiroRsBaseUrlPlaceholder" class="form-input">
+                  <input type="password" id="cfg-kiro-rs-api-key" placeholder="API Key" class="form-input">
+                  <div style="display:flex;gap:8px;">
+                    <button onclick="saveKiroRsConfig()" class="btn btn-dark btn-sm" data-i18n="common.save">保存</button>
+                    <button onclick="testKiroRsConnection()" class="btn btn-secondary btn-sm" data-i18n="settings.kiroRsTest">测试连接</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -670,6 +694,20 @@
                 <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;" data-i18n="common.loading">加载中...</div>
               </div>
             </div>
+          </div>
+
+          <!-- 自动测活开关 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;padding:12px;background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius);">
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);" data-i18n="register.autoVerifyAlive">注册完成后自动测活</div>
+              <div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:3px;" data-i18n="register.autoVerifyAliveDesc">开启后会在 token 获取成功后查询用量/模型；关闭后 token 获取成功即算注册成功。</div>
+            </div>
+            <label style="cursor:pointer;flex-shrink:0;">
+              <div class="toggle-switch">
+                <input type="checkbox" id="cfg-auto-verify-alive" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
           </div>
 
           <!-- 提示文字 -->
@@ -950,6 +988,7 @@
   </div>
 </div>
 
+<script src="js/api.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/accounts.js"></script>
 <script src="js/moemail.js"></script>

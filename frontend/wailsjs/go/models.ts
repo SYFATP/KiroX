@@ -90,6 +90,27 @@ export namespace proxy {
 
 }
 
+export namespace storage {
+
+	export class KiroRsConfig {
+	    enabled: boolean;
+	    baseUrl: string;
+	    apiKey: string;
+
+	    static createFrom(source: any = {}) {
+	        return new KiroRsConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKey = source["apiKey"];
+	    }
+	}
+
+}
+
 export namespace task {
 	
 	export class StartTaskRequest {
@@ -104,6 +125,7 @@ export namespace task {
 	    cloudmailDomains: string[];
 	    cloudmailConfigs: Record<string, Array<email.CloudMailConfig>>;
 	    cloudmailRandomMode: boolean;
+    autoVerifyAlive: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new StartTaskRequest(source);
@@ -122,6 +144,7 @@ export namespace task {
 	        this.cloudmailDomains = source["cloudmailDomains"];
 	        this.cloudmailConfigs = this.convertValues(source["cloudmailConfigs"], Array<email.CloudMailConfig>, true);
 	        this.cloudmailRandomMode = source["cloudmailRandomMode"];
+        this.autoVerifyAlive = source["autoVerifyAlive"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

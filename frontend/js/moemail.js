@@ -29,7 +29,7 @@ function _mmT(key, varsOrFallback, fallbackMaybe) {
 // 加载 MoeMail 配置
 async function loadMoeMailConfigs() {
   try {
-    const configs = await window.go.main.App.GetMoeMailConfigs();
+    const configs = await AppAPI.GetMoeMailConfigs();
     moemailConfigs = configs || [];
     // 加载状态
     loadMoeMailConfigStatus();
@@ -236,7 +236,7 @@ async function inlineAddMoeMail() {
 
   var testResult;
   try {
-    testResult = await window.go.main.App.TestMoeMailConnection(JSON.stringify({ url: url, apiKey: apikey }));
+    testResult = await AppAPI.TestMoeMailConnection(JSON.stringify({ url: url, apiKey: apikey }));
   } catch (e) {
     testResult = { error: String(e) };
   } finally {
@@ -251,7 +251,7 @@ async function inlineAddMoeMail() {
   }
 
   moemailConfigs.push({ name: name, url: url, apiKey: apikey });
-  const saveResult = await window.go.main.App.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
+  const saveResult = await AppAPI.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
   if (saveResult.error) {
     moemailConfigs.pop();
     showToast(_mmT('toast.operationFailed', '保存失败') + ': ' + saveResult.error, 'error');
@@ -284,7 +284,7 @@ async function inlineTestMoeMail() {
   btn.disabled = true; btn.textContent = _mmT('moemail.testing', '测试中...');
   statusEl.textContent = '';
   try {
-    var result = await window.go.main.App.TestMoeMailConnection(JSON.stringify({url: url, apiKey: apikey}));
+    var result = await AppAPI.TestMoeMailConnection(JSON.stringify({url: url, apiKey: apikey}));
     if (result.success) {
       statusEl.style.color = 'var(--success)';
       statusEl.textContent = _mmT('moemail.connectedDomains', { n: (result.domainCount || 0) }, '连接成功，{n} 个域名');
@@ -335,7 +335,7 @@ async function testMoeMailConnection() {
 
   try {
     const config = { name: name || _mmT('common.test', '测试'), url, apiKey };
-    const result = await window.go.main.App.TestMoeMailConnection(JSON.stringify(config));
+    const result = await AppAPI.TestMoeMailConnection(JSON.stringify(config));
 
     if (result.error) {
       resultDiv.style.color = 'var(--danger)';
@@ -400,7 +400,7 @@ async function addMoeMailConfig() {
   const newConfig = { name, url, apiKey };
 
   try {
-    const testResult = await window.go.main.App.TestMoeMailConnection(JSON.stringify(newConfig));
+    const testResult = await AppAPI.TestMoeMailConnection(JSON.stringify(newConfig));
 
     if (testResult.error) {
       resultDiv.style.color = 'var(--danger)';
@@ -420,7 +420,7 @@ async function addMoeMailConfig() {
 
     moemailConfigs.push(newConfig);
 
-    const result = await window.go.main.App.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
+    const result = await AppAPI.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
     if (result.error) {
       moemailConfigs.pop();
       resultDiv.style.color = 'var(--danger)';
@@ -465,7 +465,7 @@ async function testMoeMailConfigByIndex(index) {
 
   const config = moemailConfigs[index];
   try {
-    const result = await window.go.main.App.TestMoeMailConnection(JSON.stringify(config));
+    const result = await AppAPI.TestMoeMailConnection(JSON.stringify(config));
     if (result.error) {
       moemailConfigStatus[config.name] = { tested: true, success: false, domains: [] };
       saveMoeMailConfigStatus();
@@ -523,7 +523,7 @@ async function deleteMoeMailConfig(index) {
       moemailConfigs.splice(index, 1);
 
       try {
-        const result = await window.go.main.App.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
+        const result = await AppAPI.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
         if (result.error) {
           showToast(_mmT('toast.deleteFailed', '删除失败') + ': ' + result.error, 'error');
           await loadMoeMailConfigs();
@@ -555,7 +555,7 @@ async function clearAllMoeMailConfigs() {
       moemailConfigs = [];
 
       try {
-        const result = await window.go.main.App.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
+        const result = await AppAPI.SaveMoeMailConfigs(JSON.stringify(moemailConfigs));
         if (result.error) {
           showToast(_mmT('toast.clearFailed', '清空失败') + ': ' + result.error, 'error');
           await loadMoeMailConfigs();
@@ -579,7 +579,7 @@ async function autoTestAllMoeMailConfigs() {
   for (let i = 0; i < moemailConfigs.length; i++) {
     const config = moemailConfigs[i];
     try {
-      const result = await window.go.main.App.TestMoeMailConnection(JSON.stringify(config));
+      const result = await AppAPI.TestMoeMailConnection(JSON.stringify(config));
       if (result.error) {
         moemailConfigStatus[config.name] = { tested: true, success: false, domains: [] };
       } else {
