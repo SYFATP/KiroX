@@ -16,6 +16,7 @@ const (
 	keyResultOutputDir = "result_output_dir"
 	keyProxy           = "proxy"
 	keyLanguage        = "language"
+	keyWebPassword     = "web_password"
 	keyKiroRsEnabled   = "kiro_rs_enabled"
 	keyKiroRsBaseURL   = "kiro_rs_base_url"
 	keyKiroRsAPIKey    = "kiro_rs_api_key"
@@ -30,6 +31,8 @@ var (
 	_proxyOnce        sync.Once
 	_language         string
 	_languageOnce     sync.Once
+	_webPassword      string
+	_webPasswordOnce  sync.Once
 	_kiroRsConfig     KiroRsConfig
 	_kiroRsOnce       sync.Once
 )
@@ -90,7 +93,7 @@ func loadConfigMap() map[string]string {
 func saveConfigMap(m map[string]string) error {
 	os.MkdirAll(GetDefaultDataDir(), 0755)
 	var b strings.Builder
-	for _, k := range []string{keyDataDir, keyResultOutputDir, keyProxy, keyLanguage, keyKiroRsEnabled, keyKiroRsBaseURL, keyKiroRsAPIKey} {
+	for _, k := range []string{keyDataDir, keyResultOutputDir, keyProxy, keyLanguage, keyWebPassword, keyKiroRsEnabled, keyKiroRsBaseURL, keyKiroRsAPIKey} {
 		if v := strings.TrimSpace(m[k]); v != "" {
 			b.WriteString(k)
 			b.WriteByte('=')
@@ -303,6 +306,43 @@ func SetLanguage(lang string) error {
 	_languageOnce = sync.Once{}
 	_languageOnce.Do(func() {})
 	return nil
+}
+
+// GetWebPassword 返回 Web UI 登录密码；空字符串表示不启用登录密码。
+func GetWebPassword() string {
+	_webPasswordOnce.Do(func() {
+		m := loadConfigMap()
+		_webPassword = strings.TrimSpace(m[keyWebPassword])
+	})
+	return _webPassword
+}
+
+// SetWebPassword 保存 Web UI 登录密码；空字符串会清空配置。
+func SetWebPassword(password string) error {
+	password = strings.TrimSpace(password)
+	m := loadConfigMap()
+	if password == "" {
+		delete(m, keyWebPassword)
+	} else {
+		m[keyWebPassword] = password
+	}
+	if err := saveConfigMap(m); err != nil {
+		return err
+	}
+	_webPassword = password
+	_webPasswordOnce = sync.Once{}
+	_webPasswordOnce.Do(func() {})
+	return nil
+}
+
+// ResetWebPassword 清空 Web UI 登录密码配置。
+func ResetWebPassword() {
+	m := loadConfigMap()
+	delete(m, keyWebPassword)
+	_ = saveConfigMap(m)
+	_webPassword = ""
+	_webPasswordOnce = sync.Once{}
+	_webPasswordOnce.Do(func() {})
 }
 
 // GetKiroRsConfig 返回 kiro.rs 入库配置。

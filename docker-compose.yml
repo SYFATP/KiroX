@@ -3,10 +3,13 @@ services:
     build: .
     container_name: kirox-web
     restart: unless-stopped
-    environment:
-      KIROX_WEB_PASSWORD: change-me
+    # 也可以继续用环境变量覆盖 storage.conf 中的 web_password：
+    # environment:
+    #   KIROX_WEB_PASSWORD: change-me
     ports:
       - "127.0.0.1:8171:8171"
     volumes:
+      # 持久化 /root/.config/kirox/storage.conf，可在其中写入 web_password=change-me
+      - ./config:/root/.config/kirox
       - ./data:/data
       - ./output:/output

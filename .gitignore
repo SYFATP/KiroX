@@ -41,6 +41,8 @@ desktop.ini
 # Data & user config (runtime files, not source)
 results/
 output/
+config/
+storage.conf
 
 # Wails
 wailsjs/

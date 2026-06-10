@@ -59,6 +59,8 @@ export function GetSubscriptionPlans(arg1:string):Promise<Record<string, any>>;
 
 export function GetTaskStatus():Promise<Record<string, any>>;
 
+export function GetWebPasswordConfigured():Promise<Record<string, any>>;
+
 export function ImportOutlookFile(arg1:string):Promise<Record<string, any>>;
 
 export function ListProxyPool():Promise<Array<proxy.PoolEntry>>;
@@ -82,6 +84,8 @@ export function SaveCloudMailConfigs(arg1:string):Promise<Record<string, any>>;
 export function SaveKiroRsConfig(arg1:storage.KiroRsConfig):Promise<Record<string, any>>;
 
 export function SaveMoeMailConfigs(arg1:string):Promise<Record<string, any>>;
+
+export function SaveWebPassword(arg1:string):Promise<Record<string, any>>;
 
 export function SelectDirectory():Promise<string>;
 

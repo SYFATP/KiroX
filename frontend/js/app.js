@@ -305,6 +305,52 @@ async function resetProxy() {
   }
 }
 
+// Web 登录密码设置
+async function loadWebPasswordConfig() {
+  try {
+    var result = await AppAPI.GetWebPasswordConfigured();
+    var status = document.getElementById('cfg-web-password-status');
+    var input = document.getElementById('cfg-web-password');
+    if (input) input.value = '';
+    if (status) {
+      status.textContent = result && result.configured
+        ? tr('settings.webPasswordConfigured', '当前状态：已配置登录密码')
+        : tr('settings.webPasswordNotConfigured', '当前状态：未配置登录密码');
+    }
+  } catch(e) {}
+}
+
+async function saveWebPasswordConfig() {
+  try {
+    var input = document.getElementById('cfg-web-password');
+    var password = input ? input.value : '';
+    var result = await AppAPI.SaveWebPassword(password);
+    if (result && result.error) {
+      showToast(result.error, 'error');
+      return;
+    }
+    if (input) input.value = '';
+    await loadWebPasswordConfig();
+    showToast(tr('settings.webPasswordSaved', 'Web 登录密码已保存，重启 Web 服务后生效'));
+  } catch(e) {
+    showToast(tr('toast.operationFailed', '操作失败') + ': ' + e.message, 'error');
+  }
+}
+
+async function clearWebPasswordConfig() {
+  try {
+    var result = await AppAPI.SaveWebPassword('');
+    if (result && result.error) {
+      showToast(result.error, 'error');
+      return;
+    }
+    await loadWebPasswordConfig();
+    showToast(tr('settings.webPasswordCleared', 'Web 登录密码已清空，重启 Web 服务后生效'));
+  } catch(e) {
+    showToast(tr('toast.operationFailed', '操作失败') + ': ' + e.message, 'error');
+  }
+}
+
 // kiro.rs 入库设置
 async function loadKiroRsConfig() {
   try {
@@ -530,6 +576,7 @@ async function loadConfig() {
   loadDataDir();
   loadResultOutputDir();
   loadProxy();
+  loadWebPasswordConfig();
   loadKiroRsConfig();
   if (typeof loadProxyPool === 'function') loadProxyPool();
   startOverviewTimer();

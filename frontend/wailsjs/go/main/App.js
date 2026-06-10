@@ -110,6 +110,10 @@ export function GetTaskStatus() {
   return window['go']['main']['App']['GetTaskStatus']();
 }
 
+export function GetWebPasswordConfigured() {
+  return window['go']['main']['App']['GetWebPasswordConfigured']();
+}
+
 export function ImportOutlookFile(arg1) {
   return window['go']['main']['App']['ImportOutlookFile'](arg1);
 }
@@ -156,6 +160,10 @@ export function SaveKiroRsConfig(arg1) {
 
 export function SaveMoeMailConfigs(arg1) {
   return window['go']['main']['App']['SaveMoeMailConfigs'](arg1);
+}
+
+export function SaveWebPassword(arg1) {
+  return window['go']['main']['App']['SaveWebPassword'](arg1);
 }
 
 export function SelectDirectory() {

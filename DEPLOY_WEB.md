@@ -4,14 +4,39 @@ Web 模式用于无桌面 Linux 服务器。默认端口为 `8171`，推荐只�
 
 ## Docker Compose
 
-修改 `docker-compose.yml` 中的密码：
+Web 登录密码现在可以保存到 `storage.conf`：
+
+```ini
+web_password=change-me
+```
+
+Docker 中默认配置文件路径通常是：
+
+```text
+/root/.config/kirox/storage.conf
+```
+
+推荐挂载 `./config` 持久化该目录：
+
+```yaml
+ports:
+  - "127.0.0.1:8171:8171"
+volumes:
+  - ./config:/root/.config/kirox
+  - ./data:/data
+  - ./output:/output
+```
+
+首次启动后也可以在 Web UI 的“设置 -> Web 登录密码”中保存密码，保存后重启容器生效。
+
+如需临时覆盖配置文件密码，也可以继续使用环境变量：
 
 ```yaml
 environment:
   KIROX_WEB_PASSWORD: change-me
-ports:
-  - "127.0.0.1:8171:8171"
 ```
+
+密码优先级：`--web-password` > `KIROX_WEB_PASSWORD` > `storage.conf` 里的 `web_password` > 空密码。
 
 启动：
 
@@ -61,7 +86,20 @@ Web 模式里“存储目录/输出目录”填写的是服务器或容器内路
 ```bash
 npm --prefix frontend run build
 go build -o kirox .
+./kirox --web
+```
+
+可选密码来源：
+
+```bash
+# 命令行参数，优先级最高
+./kirox --web --web-password your-password
+
+# 环境变量，优先级次之
 KIROX_WEB_PASSWORD=your-password ./kirox --web
+
+# 或编辑 storage.conf
+web_password=your-password
 ```
 
 默认监听：

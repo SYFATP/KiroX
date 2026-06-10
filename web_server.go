@@ -263,6 +263,14 @@ func (s *webServer) call(method string, args []json.RawMessage) (interface{}, er
 		return a.ResetProxy(), nil
 	case "GetLanguage":
 		return a.GetLanguage(), nil
+	case "GetWebPasswordConfigured":
+		return a.GetWebPasswordConfigured(), nil
+	case "SaveWebPassword":
+		v, err := decodeArg[string](args, 0)
+		if err != nil {
+			return nil, err
+		}
+		return a.SaveWebPassword(v), nil
 	case "GetKiroRsConfig":
 		return a.GetKiroRsConfig(), nil
 	case "SaveKiroRsConfig":

@@ -5,6 +5,9 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
+
+	"reg_go/internal/storage"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -20,8 +23,19 @@ func main() {
 	webPassword := flag.String("web-password", os.Getenv("KIROX_WEB_PASSWORD"), "web login password")
 	flag.Parse()
 
+	explicit := map[string]bool{}
+	flag.Visit(func(f *flag.Flag) { explicit[f.Name] = true })
+
 	if *webMode {
-		runWebServer(*addr, *webPassword)
+		password := ""
+		if explicit["web-password"] {
+			password = strings.TrimSpace(*webPassword)
+		} else if env := strings.TrimSpace(os.Getenv("KIROX_WEB_PASSWORD")); env != "" {
+			password = env
+		} else {
+			password = storage.GetWebPassword()
+		}
+		runWebServer(*addr, password)
 		return
 	}
 

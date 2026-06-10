@@ -325,6 +325,19 @@ func (a *App) ResetProxy() map[string]interface{} {
 	return map[string]interface{}{"success": true}
 }
 
+// GetWebPasswordConfigured 返回是否已配置 Web UI 登录密码，不回显明文。
+func (a *App) GetWebPasswordConfigured() map[string]interface{} {
+	return map[string]interface{}{"configured": storage.GetWebPassword() != ""}
+}
+
+// SaveWebPassword 保存 Web UI 登录密码；空字符串表示清空密码。
+func (a *App) SaveWebPassword(password string) map[string]interface{} {
+	if err := storage.SetWebPassword(password); err != nil {
+		return map[string]interface{}{"success": false, "error": err.Error()}
+	}
+	return map[string]interface{}{"success": true, "configured": storage.GetWebPassword() != ""}
+}
+
 // GetKiroRsConfig 获取 kiro.rs 入库配置。
 func (a *App) GetKiroRsConfig() storage.KiroRsConfig {
 	return storage.GetKiroRsConfig()
